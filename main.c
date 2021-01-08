@@ -43,6 +43,12 @@ int main(int argc, char* argv[]) {
         int input = getch();
         int exit = 0;
         switch (input) {
+        case 'g':
+            selection = 0;
+            break;
+        case 'G':
+            selection = num_options - 1;
+            break;
         case 'h':
             if (on_left) {
                 output = *on_left;
