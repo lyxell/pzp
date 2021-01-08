@@ -1,17 +1,19 @@
 #include <ncurses.h>
 #include <string.h>
+#include <locale.h>
 
 #define KEY_ESCAPE 27
 #define KEY_RETURN 10
 
 void render(int num_options, char** options, int selection) {
-    for (int i = 0; i < num_options; i++) {
+    for (int i = 0; i < num_options && i < LINES; i++) {
         mvaddstr(i, 0, i == selection ? "> " : "  ");
         addstr(options[i]);
     }
 }
 
 int main(int argc, char* argv[]) {
+    setlocale(LC_ALL, "");
     newterm(NULL, stderr, stdin);
     noecho();
     cbreak();
@@ -22,10 +24,10 @@ int main(int argc, char* argv[]) {
     curs_set(0);
     int selection = 0;
 
-    char** return_on_h = NULL;
+    char** on_left = NULL;
 
-    if (argc >= 3 && strcmp("-h", argv[1]) == 0) {
-        return_on_h = argv + 2;
+    if (argc >= 3 && strcmp("--on-left", argv[1]) == 0) {
+        on_left = argv + 2;
         argc -= 2;
         argv += 2;
     }
@@ -42,8 +44,8 @@ int main(int argc, char* argv[]) {
         int exit = 0;
         switch (input) {
         case 'h':
-            if (return_on_h) {
-                output = *return_on_h;
+            if (on_left) {
+                output = *on_left;
                 exit = 1;
             }
             break;
