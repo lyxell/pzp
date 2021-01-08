@@ -1,5 +1,4 @@
 #include <ncurses.h>
-#include <stdio.h>
 
 #define KEY_ESCAPE 27
 #define KEY_RETURN 10
@@ -12,7 +11,7 @@ void render(int num_options, char** options, int selection) {
 }
 
 int main(int argc, char* argv[]) {
-    initscr();
+    newterm(NULL, stderr, stdin);
     noecho();
     cbreak();
     keypad(stdscr, true);
@@ -39,6 +38,7 @@ int main(int argc, char* argv[]) {
                 selection += 1;
             }
             break;
+        case 'l':
         case KEY_RETURN:
             exit = 1;
             break;
