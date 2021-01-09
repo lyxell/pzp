@@ -5,10 +5,15 @@
 #define KEY_ESCAPE 27
 #define KEY_RETURN 10
 
-void render(int num_options, char** options, int selection) {
-    for (int i = 0; i < num_options && i < LINES; i++) {
-        mvaddstr(i, 0, i == selection ? "> " : "  ");
-        addstr(options[i]);
+void render(int num_options, char** options, int selection, char* header) {
+    int i = 0;
+    if (header) {
+        mvaddstr(0, 2, header);
+        i += 2;
+    }
+    for (int j = 0; j < num_options && (j + i) < LINES; j++) {
+        mvaddstr(j + i, 0, j == selection ? "> " : "  ");
+        addstr(options[j]);
     }
 }
 
@@ -25,11 +30,21 @@ int main(int argc, char* argv[]) {
     int selection = 0;
 
     char** on_left = NULL;
+    char* header = NULL;
 
-    if (argc >= 3 && strcmp("--on-left", argv[1]) == 0) {
-        on_left = argv + 2;
-        argc -= 2;
-        argv += 2;
+    char** args = argv;
+    int nargs = argc;
+
+    for (int i = 1; i < nargs; i++) {
+        if (strcmp("--on-left", args[i]) == 0) {
+            on_left = args + i + 1;
+            argc -= 2;
+            argv += 2;
+        } else if (strcmp("--header", args[i]) == 0) {
+            header = args[i+1];
+            argc -= 2;
+            argv += 2;
+        }
     }
 
     int num_options = argc - 1;
@@ -39,7 +54,7 @@ int main(int argc, char* argv[]) {
 
     while (true)
     {
-        render(num_options, options, selection);
+        render(num_options, options, selection, header);
         int input = getch();
         int exit = 0;
         switch (input) {
