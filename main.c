@@ -88,6 +88,30 @@ struct state handle_input(struct state s, int input) {
         s.output = s.options[s.selected_option];
         s.is_exiting = 1;
         break;
+    case KEY_PPAGE:
+        if (TERMINAL_HEIGHT > s.scroll_offset) {
+            s.scroll_offset = 0;
+        } else {
+            s.scroll_offset -= TERMINAL_HEIGHT;
+        }
+        if (TERMINAL_HEIGHT > s.selected_option) {
+            s.selected_option = 0;
+        } else {
+            s.selected_option -= TERMINAL_HEIGHT;
+        }
+        break;
+    case KEY_NPAGE:
+        if (s.scroll_offset + TERMINAL_HEIGHT > s.num_options - 1) {
+            s.scroll_offset = s.num_options - 1;
+        } else {
+            s.scroll_offset += TERMINAL_HEIGHT;
+        }
+        if (s.selected_option + TERMINAL_HEIGHT > s.num_options - 1) {
+            s.selected_option = s.num_options - 1;
+        } else {
+            s.selected_option += TERMINAL_HEIGHT;
+        }
+        break;
     default:
         break;
     }
