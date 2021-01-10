@@ -8,20 +8,19 @@
 
 void render(int num_options, char** items, int y,
             int scroll_from_top, char* header) {
-    /*
     int i = 0;
     if (header) {
         mvaddstr(0, 2, header);
         i += 2;
-    }*/
-    for (int j = 0; j < LINES; j++) {
-        if (j + scroll_from_top < num_options) {
-            if (j + scroll_from_top == y) {
+    }
+    for (int j = i; j < LINES; j++) {
+        if (j - i + scroll_from_top < num_options) {
+            if (j - i + scroll_from_top == y) {
                 mvaddstr(j, 0, "> ");
             } else {
                 mvaddstr(j, 0, "  ");
             }
-            addstr(items[j + scroll_from_top]);
+            addstr(items[j - i + scroll_from_top]);
         } else {
             move(j, 0);
         }
