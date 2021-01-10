@@ -2,22 +2,34 @@
 #include <string.h>
 #include <locale.h>
 
+#define TERMINAL_HEIGHT LINES
 #define KEY_ESCAPE 27
 #define KEY_RETURN 10
 
-void render(int num_options, char** options, int selection, char* header) {
+void render(int num_options, char** items, int y,
+            int scroll_from_top, char* header) {
+    /*
     int i = 0;
     if (header) {
         mvaddstr(0, 2, header);
         i += 2;
-    }
-    for (int j = 0; j < num_options && (j + i) < LINES; j++) {
-        mvaddstr(j + i, 0, j == selection ? "> " : "  ");
-        addstr(options[j]);
+    }*/
+    for (int j = 0; j < LINES; j++) {
+        if (j + scroll_from_top < num_options) {
+            if (j + scroll_from_top == y) {
+                mvaddstr(j, 0, "> ");
+            } else {
+                mvaddstr(j, 0, "  ");
+            }
+            addstr(items[j + scroll_from_top]);
+        } else {
+            move(j, 0);
+        }
+        clrtoeol();
     }
 }
 
-int main(int argc, char* argv[]) {
+void setup() {
     setlocale(LC_ALL, "");
     newterm(NULL, stderr, stdin);
     noecho();
@@ -27,7 +39,22 @@ int main(int argc, char* argv[]) {
     use_default_colors();
     // hide cursor
     curs_set(0);
-    int selection = 0;
+}
+
+void update_scroll_from_top(int y, int* scroll_from_top) {
+    if (y < *scroll_from_top) {
+        *scroll_from_top = y;
+    } else if (y > *scroll_from_top + TERMINAL_HEIGHT - 1) {
+        *scroll_from_top = y - TERMINAL_HEIGHT + 1;
+    }
+}
+
+int main(int argc, char* argv[]) {
+
+    setup();
+
+    int y = 0;
+    int scroll_from_top = 0;
 
     char** on_left = NULL;
     char* header = NULL;
@@ -54,15 +81,16 @@ int main(int argc, char* argv[]) {
 
     while (true)
     {
-        render(num_options, options, selection, header);
+        update_scroll_from_top(y, &scroll_from_top);
+        render(num_options, options, y, scroll_from_top, header);
         int input = getch();
         int exit = 0;
         switch (input) {
         case 'g':
-            selection = 0;
+            y = 0;
             break;
         case 'G':
-            selection = num_options - 1;
+            y = num_options - 1;
             break;
         case 'h':
             if (on_left) {
@@ -71,13 +99,13 @@ int main(int argc, char* argv[]) {
             }
             break;
         case 'k':
-            if (selection > 0) {
-                selection -= 1;
+            if (y > 0) {
+                y -= 1;
             }
             break;
         case 'j':
-            if (selection < num_options - 1) {
-                selection += 1;
+            if (y < num_options - 1) {
+                y += 1;
             }
             break;
         case 'q':
@@ -85,7 +113,7 @@ int main(int argc, char* argv[]) {
             break;
         case 'l':
         case KEY_RETURN:
-            output = options[selection];
+            output = options[y];
             exit = 1;
             break;
         default:
