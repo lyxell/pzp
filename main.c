@@ -128,8 +128,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         s = update_scroll_offset(s);
         render_state(s);
-        int input = getch();
-        s = handle_input(s, input);
+        s = handle_input(s, getch());
         if (s.is_exiting) {
             break;
         }
