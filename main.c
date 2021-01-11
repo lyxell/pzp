@@ -30,7 +30,7 @@ void render_state(struct state s) {
     for (int i = 0; i < TERMINAL_HEIGHT - lines_written; i++) {
         if (i + s.scroll_offset < s.num_options) {
             if (i + s.scroll_offset == s.selected_option) {
-                mvaddstr(i + lines_written, 0, "> ");
+                mvaddstr(i + lines_written, 0, "- ");
             } else {
                 mvaddstr(i + lines_written, 0, "  ");
             }
