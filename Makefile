@@ -1,5 +1,5 @@
-pzp: main.c
-	$(CC) -Wall -O2 -static main.c -lncursesw -ltinfo -o $@
+pzp: pzp.c
+	$(CC) -Wall -O2 -static $^ -lncursesw -ltinfo -o $@
 
 install: pzp
 	install pzp /usr/local/bin/pzp
