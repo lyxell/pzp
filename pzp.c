@@ -15,6 +15,8 @@ struct state {
     char* output;
     char* output_on_key_left;
     int is_exiting;
+    int search_mode;
+    char search_string[32];
 };
 
 void render_state(struct state s) {
@@ -39,6 +41,12 @@ void render_state(struct state s) {
             move(i + lines_written, 0);
         }
         clrtoeol();
+    }
+
+    if (s.search_mode) {
+        move(TERMINAL_HEIGHT - 1, 0);
+        addstr("Search: ");
+        addstr(s.search_string);
     }
 
 }
@@ -112,7 +120,28 @@ struct state handle_input(struct state s, int input) {
             s.selected_option += TERMINAL_HEIGHT;
         }
         break;
+    case '/':
+        s.search_mode = 1;
+        break;
     default:
+        break;
+    }
+    return s;
+}
+
+struct state handle_input_search(struct state s, int input) {
+    int len = strlen(s.search_string);
+    switch (input) {
+    case KEY_ESCAPE:
+        s.search_mode = 0;
+        break;
+    case KEY_BACKSPACE:
+        if (len > 0) {
+            s.search_string[len-1] = '\0';
+        }
+        break;
+    default:
+        s.search_string[len] = input;
         break;
     }
     return s;
@@ -152,7 +181,11 @@ int main(int argc, char* argv[]) {
     while (true) {
         s = update_scroll_offset(s);
         render_state(s);
-        s = handle_input(s, getch());
+        if (s.search_mode) {
+            s = handle_input_search(s, getch());
+        } else {
+            s = handle_input(s, getch());
+        }
         if (s.is_exiting) {
             break;
         }
