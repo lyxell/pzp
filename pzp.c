@@ -174,6 +174,15 @@ int main(int argc, char* argv[]) {
             s.header = argv[i+1];
             s.options += 2;
             s.num_options -= 2;
+        // only works if --start-at is last flag
+        } else if (strcmp("--start-at", argv[i]) == 0) {
+            s.options += 2;
+            s.num_options -= 2;
+            for (int j = 0; j < s.num_options; j++) {
+                if (strcmp(s.options[j], argv[i+1]) == 0) {
+                    s.selected_option = j;
+                }
+            }
         }
     }
     
