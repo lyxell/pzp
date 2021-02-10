@@ -7,7 +7,7 @@
 #define KEY_RETURN 10
 
 struct state {
-    size_t selected_option;
+    size_t selected_option_index;
     int scroll_offset;
     char* header;
     char** options;
@@ -18,6 +18,22 @@ struct state {
     int search_mode;
     char search_string[32];
 };
+
+void setup_terminal() {
+    setlocale(LC_ALL, "");
+    newterm(NULL, stderr, stdin);
+    noecho();
+    cbreak();
+    keypad(stdscr, true);
+    set_escdelay(100);
+    use_default_colors();
+    curs_set(0);
+}
+
+void teardown_terminal() {
+    refresh();
+    endwin();
+}
 
 void render_state(struct state s) {
 
@@ -31,7 +47,7 @@ void render_state(struct state s) {
     // print the options, only print as many as will fit the screen
     for (int i = 0; i < TERMINAL_HEIGHT - lines_written; i++) {
         if (i + s.scroll_offset < s.num_options) {
-            if (i + s.scroll_offset == s.selected_option) {
+            if (i + s.scroll_offset == s.selected_option_index) {
                 mvaddstr(i + lines_written, 0, "> ");
             } else {
                 mvaddstr(i + lines_written, 0, "  ");
@@ -51,107 +67,94 @@ void render_state(struct state s) {
 
 }
 
-void setup_terminal() {
-    setlocale(LC_ALL, "");
-    newterm(NULL, stderr, stdin);
-    noecho();
-    cbreak();
-    keypad(stdscr, true);
-    set_escdelay(100);
-    use_default_colors();
-    curs_set(0);
-}
-
-void teardown_terminal() {
-    refresh();
-    endwin();
-}
-
 struct state handle_input(struct state s, int input) {
-    switch (input) {
-    case 'g':
-        s.selected_option = 0;
-        break;
-    case 'G':
-        s.selected_option = s.num_options - 1;
-        break;
-    case 'h':
-        if (!s.output_on_key_left) break;
-        s.output = s.output_on_key_left;
-        s.is_exiting = 1;
-        break;
-    case 'k':
-        if (s.selected_option == 0) break;
-        s.selected_option -= 1;
-        break;
-    case 'j':
-        if (s.selected_option == s.num_options - 1) break;
-        s.selected_option += 1;
-        break;
-    case 'q':
-        s.is_exiting = 1;
-        break;
-    case 'l':
-    case KEY_RETURN:
-        s.output = s.options[s.selected_option];
-        s.is_exiting = 1;
-        break;
-    case KEY_PPAGE:
-        if (TERMINAL_HEIGHT > s.scroll_offset) {
-            s.scroll_offset = 0;
-        } else {
-            s.scroll_offset -= TERMINAL_HEIGHT;
+    if (s.search_mode) {
+        int len = strlen(s.search_string);
+        switch (input) {
+        case KEY_ESCAPE:
+            s.search_mode = 0;
+            break;
+        case KEY_BACKSPACE:
+            if (len > 0) {
+                s.search_string[len-1] = '\0';
+            }
+            break;
+        default:
+            s.search_string[len] = input;
+            break;
         }
-        if (TERMINAL_HEIGHT > s.selected_option) {
-            s.selected_option = 0;
-        } else {
-            s.selected_option -= TERMINAL_HEIGHT;
+    } else {
+        switch (input) {
+        case 'g':
+            s.selected_option_index = 0;
+            break;
+        case 'G':
+            s.selected_option_index = s.num_options - 1;
+            break;
+        case 'h':
+            if (!s.output_on_key_left) break;
+            s.output = s.output_on_key_left;
+            s.is_exiting = 1;
+            break;
+        case 'k':
+            if (s.selected_option_index == 0) break;
+            s.selected_option_index -= 1;
+            break;
+        case 'j':
+            if (s.selected_option_index == s.num_options - 1) break;
+            s.selected_option_index += 1;
+            break;
+        case 'q':
+            s.is_exiting = 1;
+            break;
+        case 'l':
+        case KEY_RETURN:
+            s.output = s.options[s.selected_option_index];
+            s.is_exiting = 1;
+            break;
+        case KEY_PPAGE:
+            if (TERMINAL_HEIGHT > s.scroll_offset) {
+                s.scroll_offset = 0;
+            } else {
+                s.scroll_offset -= TERMINAL_HEIGHT;
+            }
+            if (TERMINAL_HEIGHT > s.selected_option_index) {
+                s.selected_option_index = 0;
+            } else {
+                s.selected_option_index -= TERMINAL_HEIGHT;
+            }
+            break;
+        case KEY_NPAGE:
+            if (s.scroll_offset + TERMINAL_HEIGHT > s.num_options - 1) {
+                s.scroll_offset = s.num_options - 1;
+            } else {
+                s.scroll_offset += TERMINAL_HEIGHT;
+            }
+            if (s.selected_option_index + TERMINAL_HEIGHT > s.num_options - 1) {
+                s.selected_option_index = s.num_options - 1;
+            } else {
+                s.selected_option_index += TERMINAL_HEIGHT;
+            }
+            break;
+        case '/':
+            s.search_mode = 1;
+            break;
+        default:
+            break;
         }
-        break;
-    case KEY_NPAGE:
-        if (s.scroll_offset + TERMINAL_HEIGHT > s.num_options - 1) {
-            s.scroll_offset = s.num_options - 1;
-        } else {
-            s.scroll_offset += TERMINAL_HEIGHT;
-        }
-        if (s.selected_option + TERMINAL_HEIGHT > s.num_options - 1) {
-            s.selected_option = s.num_options - 1;
-        } else {
-            s.selected_option += TERMINAL_HEIGHT;
-        }
-        break;
-    case '/':
-        s.search_mode = 1;
-        break;
-    default:
-        break;
-    }
-    return s;
-}
-
-struct state handle_input_search(struct state s, int input) {
-    int len = strlen(s.search_string);
-    switch (input) {
-    case KEY_ESCAPE:
-        s.search_mode = 0;
-        break;
-    case KEY_BACKSPACE:
-        if (len > 0) {
-            s.search_string[len-1] = '\0';
-        }
-        break;
-    default:
-        s.search_string[len] = input;
-        break;
     }
     return s;
 }
 
 struct state update_scroll_offset(struct state s) {
-    if (s.selected_option < s.scroll_offset) {
-        s.scroll_offset = s.selected_option;
-    } else if (s.selected_option > s.scroll_offset + TERMINAL_HEIGHT - 1) {
-        s.scroll_offset = s.selected_option - TERMINAL_HEIGHT + 1;
+    int header_height = s.header ? 2 : 0;
+    int last_rendered_index = s.scroll_offset + TERMINAL_HEIGHT
+                                              - 1 - header_height;
+    if (s.selected_option_index < s.scroll_offset) {
+        s.scroll_offset = s.selected_option_index;
+    } else if (s.selected_option_index > last_rendered_index) {
+        s.scroll_offset = s.selected_option_index - TERMINAL_HEIGHT
+                                                  + 1 + header_height;
     }
     return s;
 }
@@ -180,7 +183,7 @@ int main(int argc, char* argv[]) {
             s.num_options -= 2;
             for (int j = 0; j < s.num_options; j++) {
                 if (strcmp(s.options[j], argv[i+1]) == 0) {
-                    s.selected_option = j;
+                    s.selected_option_index = j;
                 }
             }
         }
@@ -190,11 +193,7 @@ int main(int argc, char* argv[]) {
     while (true) {
         s = update_scroll_offset(s);
         render_state(s);
-        if (s.search_mode) {
-            s = handle_input_search(s, getch());
-        } else {
-            s = handle_input(s, getch());
-        }
+        s = handle_input(s, getch());
         if (s.is_exiting) {
             break;
         }
