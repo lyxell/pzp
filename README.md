@@ -1,6 +1,4 @@
-# PZP
+### pzp
 
-## Todo
+a minimal `fzf` replacement
 
-* ▸
-* ▻ as alternative?
